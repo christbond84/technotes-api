@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt")
 const asyncHandler = require("express-async-handler")
 
 const login = asyncHandler(async (req, res) => {
-  const { username, password } = req.body
+  const { username, password, persist } = req.body
   if (!username || !password) {
     res.status(400).json({ message: "All fields are required" })
   }
@@ -27,18 +27,20 @@ const login = asyncHandler(async (req, res) => {
     process.env.ACCESS_TOKEN_SECRET,
     { expiresIn: "15m" }
   )
-  const refreshToken = jwt.sign(
-    { username: foundUser.username, roles: foundUser.roles },
-    process.env.REFRESH_TOKEN_SECRET,
-    { expiresIn: "7d" }
-  )
+  if (persist) {
+    const refreshToken = jwt.sign(
+      { username: foundUser.username, roles: foundUser.roles },
+      process.env.REFRESH_TOKEN_SECRET,
+      { expiresIn: "7d" }
+    )
 
-  res.cookie("jwt", refreshToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  })
+    res.cookie("jwt", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    })
+  }
   res.json({ accessToken })
 })
 
